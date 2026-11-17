@@ -1,0 +1,52 @@
+name: Verify generated OpenAPI code
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generated-code-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-generated-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: code
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.6"
+          enable-cache: true
+          cache-dependency-glob: "code/uv.lock"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: uv sync --extra dev --locked
+      - run: uv run contract-sync avh-evalscore
+      - id: openapi-generator
+        name: Resolve OpenAPI Generator version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+
+          with open("pyproject.toml", "rb") as file:
+              configuration = tomllib.load(file)
+          print("version=" + configuration["tool"]["openapi-contracts"]["generator-version"])
+          PY
+      - run: npx --yes @openapitools/openapi-generator-cli@2.41.0 version-manager set "${{ steps.openapi-generator.outputs.version }}"
+      - run: uv run generate-source --rest-server --api avh-evalscore-server
+      - run: git ls-files --error-unmatch generated/avh_evalscore_server/openapi.yaml
+      - run: git diff --exit-code -- generated/avh_evalscore_server/avh_evalscore_server/
