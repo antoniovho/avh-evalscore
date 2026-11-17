@@ -1,0 +1,46 @@
+area/backend:
+  - changed-files:
+      - any-glob-to-any-file: "code/evalscore/**"
+
+area/testing:
+  - changed-files:
+      - any-glob-to-any-file: "code/tests/**"
+
+area/github:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+kind/documentation:
+  - changed-files:
+      - any-glob-to-any-file: "**/*.md"
+
+area/configuration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "code/pyproject.toml"
+          - "code/Makefile"
+          - ".tool-versions"
+
+area/security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/dependabot.yml"
+          - ".github/workflows/security-*.yml"
+
+area/sql:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "code/alembic/**"
+          - "**/*.sql"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ".github/dependabot.yml"
+
+area/api:
+  - changed-files:
+      - any-glob-to-any-file: "apis/**"
+
+area/generated-code:
+  - changed-files:
+      - any-glob-to-any-file: "generated/**"
