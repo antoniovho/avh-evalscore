@@ -1,0 +1,4121 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: avelasco.horcajada@knowmadmood.com
+    name: Antonio Velasco Horcajada
+  description: API for authoring and executing reproducible LLM evaluations.
+  title: AVH Evalscore
+  version: 0.1.0
+servers:
+- description: Local development server
+  url: http://localhost:8080
+security:
+- bearerAuth: []
+tags:
+- description: Evaluation suite and case authoring.
+  name: Evaluations
+- description: Asynchronous evaluation execution and immutable results.
+  name: Evaluation Runs
+paths:
+  /v1/evaluations:
+    get:
+      description: Returns a paginated list of evaluation definitions available for
+        execution.
+      operationId: listEvaluations
+      parameters:
+      - description: Number of records to skip.
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Maximum records to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Direction applied to the selected sort field.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          $ref: "#/components/schemas/SortOrder"
+        style: form
+      - description: Field used to order evaluation suites.
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationSortBy"
+        style: form
+      - description: Case-insensitive partial match on the evaluation name.
+        explode: true
+        in: query
+        name: name
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationNameFilter"
+        style: form
+      - description: Return only evaluations with this target kind.
+        explode: true
+        in: query
+        name: targetKind
+        required: false
+        schema:
+          $ref: "#/components/schemas/TargetKind"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationListResponse"
+          description: Evaluations
+        "400":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/bad-request
+                status: 400
+                title: Bad Request
+                detail: The request is invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is invalid.
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: List evaluations
+      tags:
+      - Evaluations
+    post:
+      description: Creates an evaluation definition with a configured target and evaluation
+        engine.
+      operationId: createEvaluation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvaluationRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+          description: Evaluation created
+          headers:
+            Location:
+              explode: false
+              required: true
+              schema:
+                format: uri-reference
+                type: string
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/bad-request
+                status: 400
+                title: Bad Request
+                detail: The request is invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is invalid.
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Create an evaluation
+      tags:
+      - Evaluations
+  /v1/evaluations/{evaluationId}:
+    get:
+      description: Returns the current configuration of the requested evaluation definition.
+      operationId: getEvaluation
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+          description: Evaluation
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Get an evaluation
+      tags:
+      - Evaluations
+    patch:
+      description: Applies a partial update to an evaluation definition without changing
+        its identity.
+      operationId: updateEvaluation
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEvaluationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+          description: Evaluation updated
+        "400":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/bad-request
+                status: 400
+                title: Bad Request
+                detail: The request is invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is invalid.
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Update an evaluation
+      tags:
+      - Evaluations
+  /v1/evaluations/{evaluationId}/cases:
+    get:
+      description: Returns a paginated list of cases belonging to the requested evaluation.
+      operationId: listEvaluationCases
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: Number of records to skip.
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Maximum records to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Direction applied to the selected sort field.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          $ref: "#/components/schemas/SortOrder"
+        style: form
+      - description: Field used to order evaluation cases.
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationCaseSortBy"
+        style: form
+      - description: Return only cases of this kind.
+        explode: true
+        in: query
+        name: kind
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationCaseKind"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationCaseListResponse"
+          description: Evaluation cases
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: List evaluation cases
+      tags:
+      - Evaluations
+    post:
+      description: "Adds a single-turn, multi-turn, or trajectory case to an evaluation\
+        \ definition."
+      operationId: createEvaluationCase
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvaluationCaseRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationCase"
+          description: Evaluation case created
+          headers:
+            Location:
+              explode: false
+              required: true
+              schema:
+                format: uri-reference
+                type: string
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/bad-request
+                status: 400
+                title: Bad Request
+                detail: The request is invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is invalid.
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Create an evaluation case
+      tags:
+      - Evaluations
+  /v1/evaluations/{evaluationId}/cases/{caseId}:
+    get:
+      description: Returns one case from the requested evaluation definition.
+      operationId: getEvaluationCase
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: UUID of the evaluation case.
+        explode: false
+        in: path
+        name: caseId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationCase"
+          description: Evaluation case
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Get an evaluation case
+      tags:
+      - Evaluations
+    patch:
+      description: Replaces the input and expectations of an existing case in an evaluation.
+      operationId: updateEvaluationCase
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: UUID of the evaluation case.
+        explode: false
+        in: path
+        name: caseId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvaluationCaseRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationCase"
+          description: Evaluation case updated
+        "400":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/bad-request
+                status: 400
+                title: Bad Request
+                detail: The request is invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is invalid.
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Update an evaluation case
+      tags:
+      - Evaluations
+  /v1/evaluations/{evaluationId}/cases/{caseId}/runs:
+    get:
+      description: Returns a paginated history of runs whose immutable snapshot contains
+        the case.
+      operationId: listEvaluationCaseRuns
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: UUID of the evaluation case.
+        explode: false
+        in: path
+        name: caseId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: Number of records to skip.
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Maximum records to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Direction applied to the selected sort field.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          $ref: "#/components/schemas/SortOrder"
+        style: form
+      - description: Field used to order evaluation runs.
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationRunSortBy"
+        style: form
+      - description: Return only runs in this lifecycle state.
+        explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationRunStatus"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRunListResponse"
+          description: Evaluation case runs
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: List evaluation case runs
+      tags:
+      - Evaluation Runs
+    post:
+      description: "Captures the current evaluation configuration and the requested\
+        \ owned case, then schedules its asynchronous execution. The resulting run\
+        \ contains a single immutable case snapshot."
+      operationId: scheduleEvaluationCaseRun
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: UUID of the evaluation case.
+        explode: false
+        in: path
+        name: caseId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRun"
+          description: Evaluation case run accepted
+          headers:
+            Location:
+              explode: false
+              required: true
+              schema:
+                format: uri-reference
+                type: string
+              style: simple
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Schedule one evaluation case
+      tags:
+      - Evaluation Runs
+  /v1/evaluations/{evaluationId}/runs:
+    get:
+      description: Returns a paginated list of historical and active runs for an evaluation.
+      operationId: listEvaluationRuns
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: Number of records to skip.
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Maximum records to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Direction applied to the selected sort field.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          $ref: "#/components/schemas/SortOrder"
+        style: form
+      - description: Field used to order evaluation runs.
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationRunSortBy"
+        style: form
+      - description: Return only runs in this lifecycle state.
+        explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationRunStatus"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRunListResponse"
+          description: Evaluation runs
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: List evaluation runs
+      tags:
+      - Evaluation Runs
+    post:
+      description: Captures the current evaluation definition and schedules it for
+        asynchronous processing.
+      operationId: scheduleEvaluationRun
+      parameters:
+      - description: UUID of the evaluation.
+        explode: false
+        in: path
+        name: evaluationId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRun"
+          description: Evaluation run accepted
+          headers:
+            Location:
+              explode: false
+              required: true
+              schema:
+                format: uri-reference
+                type: string
+              style: simple
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Schedule an evaluation run
+      tags:
+      - Evaluation Runs
+  /v1/evaluation-runs/{runId}:
+    get:
+      description: "Returns the status, immutable configuration snapshot, and failure\
+        \ detail of one run."
+      operationId: getEvaluationRun
+      parameters:
+      - description: UUID of the evaluation run.
+        explode: false
+        in: path
+        name: runId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRun"
+          description: Evaluation run
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Get an evaluation run
+      tags:
+      - Evaluation Runs
+  /v1/evaluation-runs/{runId}/results:
+    get:
+      description: Returns a paginated list of result attempts produced by the requested
+        run.
+      operationId: listEvaluationRunResults
+      parameters:
+      - description: UUID of the evaluation run.
+        explode: false
+        in: path
+        name: runId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      - description: Number of records to skip.
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+        style: form
+      - description: Maximum records to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Direction applied to the selected sort field.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          $ref: "#/components/schemas/SortOrder"
+        style: form
+      - description: Field used to order evaluation results.
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationResultSortBy"
+        style: form
+      - description: Return only passing or failing result attempts.
+        explode: true
+        in: query
+        name: passed
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationResultPassedFilter"
+        style: form
+      - description: Return only result attempts for this evaluation case.
+        explode: true
+        in: query
+        name: caseId
+        required: false
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: form
+      - description: Inclusive lower score bound.
+        explode: true
+        in: query
+        name: minScore
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationResultScore"
+        style: form
+      - description: Inclusive upper score bound.
+        explode: true
+        in: query
+        name: maxScore
+        required: false
+        schema:
+          $ref: "#/components/schemas/EvaluationResultScore"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResultListResponse"
+          description: Evaluation results
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "422":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/domain-validation
+                status: 422
+                title: Unprocessable Entity
+                detail: The request violates a domain rule.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The request is syntactically valid but violates a domain rule.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: List immutable evaluation results
+      tags:
+      - Evaluation Runs
+  /v1/evaluation-runs/{runId}/cancellations:
+    post:
+      description: Requests cancellation of a run that has not reached a terminal
+        state.
+      operationId: cancelEvaluationRun
+      parameters:
+      - description: UUID of the evaluation run.
+        explode: false
+        in: path
+        name: runId
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationRun"
+          description: Evaluation run cancelled
+        "401":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/unauthorized
+                status: 401
+                title: Unauthorized
+                detail: Authentication is required or the credentials are invalid.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: Authentication is required or failed.
+        "404":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/not-found
+                status: 404
+                title: Not Found
+                detail: The requested resource was not found.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The requested resource was not found.
+        "409":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/conflict
+                status: 409
+                title: Conflict
+                detail: The resource state conflicts with this operation.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: The operation conflicts with the current state of the resource.
+        "500":
+          content:
+            application/problem+json:
+              example:
+                type: /problems/internal-server-error
+                status: 500
+                title: Internal Server Error
+                detail: An unexpected server error occurred.
+              schema:
+                $ref: "#/components/schemas/ErrorDetails"
+          description: An unexpected server error occurred.
+      summary: Cancel an evaluation run
+      tags:
+      - Evaluation Runs
+components:
+  parameters:
+    Offset:
+      description: Number of records to skip.
+      explode: true
+      in: query
+      name: offset
+      required: false
+      schema:
+        default: 0
+        minimum: 0
+        type: integer
+      style: form
+    Limit:
+      description: Maximum records to return.
+      explode: true
+      in: query
+      name: limit
+      required: false
+      schema:
+        default: 20
+        maximum: 100
+        minimum: 1
+        type: integer
+      style: form
+    Order:
+      description: Direction applied to the selected sort field.
+      explode: true
+      in: query
+      name: order
+      required: false
+      schema:
+        $ref: "#/components/schemas/SortOrder"
+      style: form
+    EvaluationSortBy:
+      description: Field used to order evaluation suites.
+      explode: true
+      in: query
+      name: sortBy
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationSortBy"
+      style: form
+    EvaluationName:
+      description: Case-insensitive partial match on the evaluation name.
+      explode: true
+      in: query
+      name: name
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationNameFilter"
+      style: form
+    TargetKindFilter:
+      description: Return only evaluations with this target kind.
+      explode: true
+      in: query
+      name: targetKind
+      required: false
+      schema:
+        $ref: "#/components/schemas/TargetKind"
+      style: form
+    EvaluationId:
+      description: UUID of the evaluation.
+      explode: false
+      in: path
+      name: evaluationId
+      required: true
+      schema:
+        $ref: "#/components/schemas/UUID"
+      style: simple
+    EvaluationCaseSortBy:
+      description: Field used to order evaluation cases.
+      explode: true
+      in: query
+      name: sortBy
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationCaseSortBy"
+      style: form
+    EvaluationCaseKindFilter:
+      description: Return only cases of this kind.
+      explode: true
+      in: query
+      name: kind
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationCaseKind"
+      style: form
+    CaseId:
+      description: UUID of the evaluation case.
+      explode: false
+      in: path
+      name: caseId
+      required: true
+      schema:
+        $ref: "#/components/schemas/UUID"
+      style: simple
+    EvaluationRunSortBy:
+      description: Field used to order evaluation runs.
+      explode: true
+      in: query
+      name: sortBy
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationRunSortBy"
+      style: form
+    EvaluationRunStatusFilter:
+      description: Return only runs in this lifecycle state.
+      explode: true
+      in: query
+      name: status
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationRunStatus"
+      style: form
+    RunId:
+      description: UUID of the evaluation run.
+      explode: false
+      in: path
+      name: runId
+      required: true
+      schema:
+        $ref: "#/components/schemas/UUID"
+      style: simple
+    EvaluationResultSortBy:
+      description: Field used to order evaluation results.
+      explode: true
+      in: query
+      name: sortBy
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationResultSortBy"
+      style: form
+    EvaluationResultPassedFilter:
+      description: Return only passing or failing result attempts.
+      explode: true
+      in: query
+      name: passed
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationResultPassedFilter"
+      style: form
+    EvaluationResultCaseIdFilter:
+      description: Return only result attempts for this evaluation case.
+      explode: true
+      in: query
+      name: caseId
+      required: false
+      schema:
+        $ref: "#/components/schemas/UUID"
+      style: form
+    EvaluationResultMinScoreFilter:
+      description: Inclusive lower score bound.
+      explode: true
+      in: query
+      name: minScore
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationResultScore"
+      style: form
+    EvaluationResultMaxScoreFilter:
+      description: Inclusive upper score bound.
+      explode: true
+      in: query
+      name: maxScore
+      required: false
+      schema:
+        $ref: "#/components/schemas/EvaluationResultScore"
+      style: form
+  responses:
+    BadRequest400:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/bad-request
+            status: 400
+            title: Bad Request
+            detail: The request is invalid.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: The request is invalid.
+    Unauthorized401:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/unauthorized
+            status: 401
+            title: Unauthorized
+            detail: Authentication is required or the credentials are invalid.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: Authentication is required or failed.
+    UnprocessableEntity422:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/domain-validation
+            status: 422
+            title: Unprocessable Entity
+            detail: The request violates a domain rule.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: The request is syntactically valid but violates a domain rule.
+    InternalServerError500:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/internal-server-error
+            status: 500
+            title: Internal Server Error
+            detail: An unexpected server error occurred.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: An unexpected server error occurred.
+    NotFound404:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/not-found
+            status: 404
+            title: Not Found
+            detail: The requested resource was not found.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: The requested resource was not found.
+    Conflict409:
+      content:
+        application/problem+json:
+          example:
+            type: /problems/conflict
+            status: 409
+            title: Conflict
+            detail: The resource state conflicts with this operation.
+          schema:
+            $ref: "#/components/schemas/ErrorDetails"
+      description: The operation conflicts with the current state of the resource.
+  schemas:
+    SortOrder:
+      default: DESC
+      description: Direction applied to a collection's selected sort field.
+      enum:
+      - ASC
+      - DESC
+      example: DESC
+      title: SortOrder
+      type: string
+    EvaluationSortBy:
+      default: CREATED_AT
+      description: Field used to order evaluation suites.
+      enum:
+      - NAME
+      - CREATED_AT
+      - UPDATED_AT
+      example: CREATED_AT
+      title: EvaluationSortBy
+      type: string
+    EvaluationNameFilter:
+      description: Case-insensitive partial match for an evaluation suite name.
+      maxLength: 255
+      minLength: 1
+      title: EvaluationNameFilter
+      type: string
+    TargetKind:
+      enum:
+      - LITELLM
+      - HTTP
+      title: TargetKind
+      type: string
+    UUID:
+      format: uuid
+      title: id
+      type: string
+    LiteLLMTarget:
+      additionalProperties: false
+      example:
+        kind: LITELLM
+        profile: profile
+        model: model
+      properties:
+        kind:
+          enum:
+          - LITELLM
+          title: kind
+          type: string
+        profile:
+          maxLength: 100
+          minLength: 1
+          title: profile
+          type: string
+        model:
+          maxLength: 255
+          minLength: 1
+          title: model
+          type: string
+      required:
+      - kind
+      - model
+      - profile
+      title: LiteLLMTarget
+      type: object
+    HttpTarget:
+      additionalProperties: false
+      properties:
+        kind:
+          enum:
+          - HTTP
+          title: kind
+          type: string
+        profile:
+          maxLength: 100
+          minLength: 1
+          title: profile
+          type: string
+      required:
+      - kind
+      - profile
+      title: HttpTarget
+      type: object
+    TargetConfiguration:
+      discriminator:
+        mapping:
+          LITELLM: "#/components/schemas/LiteLLMTarget"
+          HTTP: "#/components/schemas/HttpTarget"
+        propertyName: kind
+      oneOf:
+      - $ref: "#/components/schemas/LiteLLMTarget"
+      - $ref: "#/components/schemas/HttpTarget"
+      title: TargetConfiguration
+    EvaluatorConfiguration:
+      additionalProperties: false
+      example:
+        profile: profile
+        model: model
+        metric: G_EVAL
+        criteria: criteria
+        threshold: 0.08008281904610115
+      properties:
+        profile:
+          maxLength: 100
+          minLength: 1
+          title: profile
+          type: string
+        model:
+          description: "LiteLLM provider/model identifier used by DeepEval, for example\
+            \ openai/gpt-4.1-mini."
+          maxLength: 255
+          minLength: 1
+          title: model
+          type: string
+        metric:
+          description: The DeepEval metric implemented by this API version.
+          enum:
+          - G_EVAL
+          title: metric
+          type: string
+        criteria:
+          maxLength: 10000
+          minLength: 1
+          title: criteria
+          type: string
+        threshold:
+          maximum: 1
+          minimum: 0
+          title: threshold
+          type: number
+      required:
+      - criteria
+      - metric
+      - model
+      - profile
+      - threshold
+      title: EvaluatorConfiguration
+      type: object
+    Evaluation:
+      additionalProperties: false
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        name: name
+        description: description
+        target:
+          kind: LITELLM
+          profile: profile
+          model: model
+        evaluator:
+          profile: profile
+          model: model
+          metric: G_EVAL
+          criteria: criteria
+          threshold: 0.08008281904610115
+        repetitions: 60
+        concurrency: 3
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        name:
+          maxLength: 255
+          minLength: 1
+          title: name
+          type: string
+        description:
+          maxLength: 5000
+          nullable: true
+          title: description
+          type: string
+        target:
+          $ref: "#/components/schemas/TargetConfiguration"
+        evaluator:
+          $ref: "#/components/schemas/EvaluatorConfiguration"
+        repetitions:
+          maximum: 100
+          minimum: 1
+          title: repetitions
+          type: integer
+        concurrency:
+          maximum: 20
+          minimum: 1
+          title: concurrency
+          type: integer
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+        updatedAt:
+          format: date-time
+          title: updatedAt
+          type: string
+      required:
+      - concurrency
+      - createdAt
+      - evaluator
+      - id
+      - name
+      - repetitions
+      - target
+      - updatedAt
+      title: Evaluation
+      type: object
+    Pagination:
+      additionalProperties: false
+      example:
+        offset: 0
+        limit: 56
+        total: 0
+      properties:
+        offset:
+          minimum: 0
+          title: offset
+          type: integer
+        limit:
+          maximum: 100
+          minimum: 1
+          title: limit
+          type: integer
+        total:
+          minimum: 0
+          title: total
+          type: integer
+      required:
+      - limit
+      - offset
+      - total
+      title: Pagination
+      type: object
+    EvaluationListResponse:
+      additionalProperties: false
+      example:
+        data:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        pagination:
+          offset: 0
+          limit: 56
+          total: 0
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/Evaluation"
+          maxItems: 100
+          title: data
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+      title: EvaluationListResponse
+      type: object
+    ErrorDetails:
+      properties:
+        type:
+          default: about:blank
+          description: |
+            URI reference identifying the problem type. When omitted, "about:blank" is assumed.
+          example: /problems/invalid-request
+          format: uri-reference
+          title: type
+          type: string
+        status:
+          description: |
+            HTTP status code generated by the server for this occurrence of the problem.
+          example: 400
+          format: int32
+          maximum: 599
+          minimum: 100
+          title: status
+          type: integer
+        title:
+          description: |
+            Short, human-readable summary of the problem type. It should remain stable across occurrences of the same problem.
+          example: Bad Request
+          maxLength: 1000
+          title: title
+          type: string
+        detail:
+          description: |
+            Human-readable explanation specific to this occurrence of the problem.
+          example: The request is invalid.
+          maxLength: 5000
+          title: detail
+          type: string
+        instance:
+          description: |
+            URI reference identifying this specific occurrence of the problem. It may be used to correlate the response with logs or traces.
+          example: /errors/01K5A8F7Q
+          format: uri-reference
+          title: instance
+          type: string
+      required:
+      - detail
+      - status
+      - title
+      title: ErrorDetails
+      type: object
+    CreateEvaluationRequest:
+      additionalProperties: false
+      example:
+        name: name
+        description: description
+        target:
+          kind: LITELLM
+          profile: profile
+          model: model
+        evaluator:
+          profile: profile
+          model: model
+          metric: G_EVAL
+          criteria: criteria
+          threshold: 0.08008281904610115
+        repetitions: 8
+        concurrency: 12
+      properties:
+        name:
+          maxLength: 255
+          minLength: 1
+          title: name
+          type: string
+        description:
+          maxLength: 5000
+          nullable: true
+          title: description
+          type: string
+        target:
+          $ref: "#/components/schemas/TargetConfiguration"
+        evaluator:
+          $ref: "#/components/schemas/EvaluatorConfiguration"
+        repetitions:
+          default: 1
+          maximum: 100
+          minimum: 1
+          title: repetitions
+          type: integer
+        concurrency:
+          default: 1
+          maximum: 20
+          minimum: 1
+          title: concurrency
+          type: integer
+      required:
+      - evaluator
+      - name
+      - target
+      title: CreateEvaluationRequest
+      type: object
+    UpdateEvaluationRequest:
+      additionalProperties: false
+      example:
+        name: name
+        description: description
+        target:
+          kind: LITELLM
+          profile: profile
+          model: model
+        evaluator:
+          profile: profile
+          model: model
+          metric: G_EVAL
+          criteria: criteria
+          threshold: 0.08008281904610115
+        repetitions: 8
+        concurrency: 12
+      properties:
+        name:
+          maxLength: 255
+          minLength: 1
+          title: name
+          type: string
+        description:
+          maxLength: 5000
+          nullable: true
+          title: description
+          type: string
+        target:
+          $ref: "#/components/schemas/TargetConfiguration"
+        evaluator:
+          $ref: "#/components/schemas/EvaluatorConfiguration"
+        repetitions:
+          maximum: 100
+          minimum: 1
+          title: repetitions
+          type: integer
+        concurrency:
+          maximum: 20
+          minimum: 1
+          title: concurrency
+          type: integer
+      title: UpdateEvaluationRequest
+      type: object
+    EvaluationCaseSortBy:
+      default: CREATED_AT
+      description: Field used to order evaluation cases.
+      enum:
+      - CREATED_AT
+      - UPDATED_AT
+      example: CREATED_AT
+      title: EvaluationCaseSortBy
+      type: string
+    EvaluationCaseKind:
+      enum:
+      - SINGLE_TURN
+      - MULTI_TURN
+      - TRAJECTORY
+      title: EvaluationCaseKind
+      type: string
+    SingleTurnEvaluationCase:
+      additionalProperties: false
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        kind: SINGLE_TURN
+        input: input
+        expectedOutput: expectedOutput
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        kind:
+          enum:
+          - SINGLE_TURN
+          title: kind
+          type: string
+        input:
+          maxLength: 50000
+          minLength: 1
+          title: input
+          type: string
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+        updatedAt:
+          format: date-time
+          title: updatedAt
+          type: string
+      required:
+      - createdAt
+      - expectedOutput
+      - id
+      - input
+      - kind
+      - updatedAt
+      title: SingleTurnEvaluationCase
+      type: object
+    Message:
+      additionalProperties: false
+      properties:
+        role:
+          enum:
+          - system
+          - user
+          - assistant
+          - tool
+          title: role
+          type: string
+        content:
+          maxLength: 50000
+          minLength: 1
+          title: content
+          type: string
+      required:
+      - content
+      - role
+      title: Message
+      type: object
+    MultiTurnEvaluationCase:
+      additionalProperties: false
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        kind:
+          enum:
+          - MULTI_TURN
+          title: kind
+          type: string
+        messages:
+          items:
+            $ref: "#/components/schemas/Message"
+          maxItems: 100
+          minItems: 1
+          title: messages
+          type: array
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+        updatedAt:
+          format: date-time
+          title: updatedAt
+          type: string
+      required:
+      - createdAt
+      - expectedOutput
+      - id
+      - kind
+      - messages
+      - updatedAt
+      title: MultiTurnEvaluationCase
+      type: object
+    TraceStepKind:
+      description: Normalized kind of an execution trace step shared by trajectory
+        definitions and runs.
+      enum:
+      - MODEL
+      - TOOL
+      - AGENT
+      title: TraceStepKind
+      type: string
+    TrajectoryStepExpectation:
+      additionalProperties: false
+      example:
+        kind: null
+        name: name
+      properties:
+        kind:
+          $ref: "#/components/schemas/TraceStepKind"
+        name:
+          maxLength: 255
+          minLength: 1
+          title: name
+          type: string
+      required:
+      - kind
+      - name
+      title: TrajectoryStepExpectation
+      type: object
+    TrajectoryExpectation:
+      additionalProperties: false
+      anyOf:
+      - $ref: "#/components/schemas/TrajectoryExpectation_anyOf"
+      - $ref: "#/components/schemas/TrajectoryExpectation_anyOf_1"
+      properties:
+        expectedSteps:
+          items:
+            $ref: "#/components/schemas/TrajectoryStepExpectation"
+          maxItems: 100
+          title: expectedSteps
+          type: array
+        forbiddenSteps:
+          items:
+            $ref: "#/components/schemas/TrajectoryStepExpectation"
+          maxItems: 100
+          title: forbiddenSteps
+          type: array
+        strictOrder:
+          default: true
+          title: strictOrder
+          type: boolean
+      title: TrajectoryExpectation
+      type: object
+    TrajectoryEvaluationCase:
+      additionalProperties: false
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        kind:
+          enum:
+          - TRAJECTORY
+          title: kind
+          type: string
+        input:
+          maxLength: 50000
+          minLength: 1
+          title: input
+          type: string
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+        trajectory:
+          $ref: "#/components/schemas/TrajectoryExpectation"
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+        updatedAt:
+          format: date-time
+          title: updatedAt
+          type: string
+      required:
+      - createdAt
+      - expectedOutput
+      - id
+      - input
+      - kind
+      - trajectory
+      - updatedAt
+      title: TrajectoryEvaluationCase
+      type: object
+    EvaluationCase:
+      discriminator:
+        mapping:
+          SINGLE_TURN: "#/components/schemas/SingleTurnEvaluationCase"
+          MULTI_TURN: "#/components/schemas/MultiTurnEvaluationCase"
+          TRAJECTORY: "#/components/schemas/TrajectoryEvaluationCase"
+        propertyName: kind
+      oneOf:
+      - $ref: "#/components/schemas/SingleTurnEvaluationCase"
+      - $ref: "#/components/schemas/MultiTurnEvaluationCase"
+      - $ref: "#/components/schemas/TrajectoryEvaluationCase"
+      title: EvaluationCase
+    EvaluationCaseListResponse:
+      additionalProperties: false
+      example:
+        data:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          kind: SINGLE_TURN
+          input: input
+          expectedOutput: expectedOutput
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          kind: SINGLE_TURN
+          input: input
+          expectedOutput: expectedOutput
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          kind: SINGLE_TURN
+          input: input
+          expectedOutput: expectedOutput
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          kind: SINGLE_TURN
+          input: input
+          expectedOutput: expectedOutput
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          kind: SINGLE_TURN
+          input: input
+          expectedOutput: expectedOutput
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        pagination:
+          offset: 0
+          limit: 56
+          total: 0
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/EvaluationCase"
+          maxItems: 100
+          title: data
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+      title: EvaluationCaseListResponse
+      type: object
+    CreateSingleTurnEvaluationCaseRequest:
+      additionalProperties: false
+      example:
+        kind: SINGLE_TURN
+        input: input
+        expectedOutput: expectedOutput
+      properties:
+        kind:
+          enum:
+          - SINGLE_TURN
+          title: kind
+          type: string
+        input:
+          maxLength: 50000
+          minLength: 1
+          title: input
+          type: string
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+      required:
+      - input
+      - kind
+      title: CreateSingleTurnEvaluationCaseRequest
+      type: object
+    CreateMultiTurnEvaluationCaseRequest:
+      additionalProperties: false
+      properties:
+        kind:
+          enum:
+          - MULTI_TURN
+          title: kind
+          type: string
+        messages:
+          items:
+            $ref: "#/components/schemas/Message"
+          maxItems: 100
+          minItems: 1
+          title: messages
+          type: array
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+      required:
+      - kind
+      - messages
+      title: CreateMultiTurnEvaluationCaseRequest
+      type: object
+    CreateTrajectoryEvaluationCaseRequest:
+      additionalProperties: false
+      properties:
+        kind:
+          enum:
+          - TRAJECTORY
+          title: kind
+          type: string
+        input:
+          maxLength: 50000
+          minLength: 1
+          title: input
+          type: string
+        expectedOutput:
+          maxLength: 50000
+          nullable: true
+          title: expectedOutput
+          type: string
+        trajectory:
+          $ref: "#/components/schemas/TrajectoryExpectation"
+      required:
+      - input
+      - kind
+      - trajectory
+      title: CreateTrajectoryEvaluationCaseRequest
+      type: object
+    CreateEvaluationCaseRequest:
+      discriminator:
+        mapping:
+          SINGLE_TURN: "#/components/schemas/CreateSingleTurnEvaluationCaseRequest"
+          MULTI_TURN: "#/components/schemas/CreateMultiTurnEvaluationCaseRequest"
+          TRAJECTORY: "#/components/schemas/CreateTrajectoryEvaluationCaseRequest"
+        propertyName: kind
+      oneOf:
+      - $ref: "#/components/schemas/CreateSingleTurnEvaluationCaseRequest"
+      - $ref: "#/components/schemas/CreateMultiTurnEvaluationCaseRequest"
+      - $ref: "#/components/schemas/CreateTrajectoryEvaluationCaseRequest"
+      title: CreateEvaluationCaseRequest
+    EvaluationRunSortBy:
+      default: CREATED_AT
+      description: Field used to order evaluation runs.
+      enum:
+      - CREATED_AT
+      - STARTED_AT
+      - FINISHED_AT
+      - STATUS
+      example: CREATED_AT
+      title: EvaluationRunSortBy
+      type: string
+    EvaluationRunStatus:
+      description: Lifecycle state of an asynchronous evaluation run.
+      enum:
+      - CREATED
+      - RUNNING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
+      example: COMPLETED
+      title: EvaluationRunStatus
+      type: string
+    EvaluationResultScore:
+      description: A normalized evaluation result score.
+      maximum: 1
+      minimum: 0
+      title: EvaluationResultScore
+      type: number
+    EvaluationResultPassedFilter:
+      description: Whether an evaluation result attempt passed its configured threshold.
+      title: EvaluationResultPassedFilter
+      type: boolean
+    TraceStep:
+      additionalProperties: false
+      example:
+        kind: MODEL
+        name: name
+        input: input
+        output: output
+        startedAt: 2000-01-23T04:56:07.000+00:00
+        finishedAt: 2000-01-23T04:56:07.000+00:00
+        metadata:
+          key: metadata
+      properties:
+        kind:
+          $ref: "#/components/schemas/TraceStepKind"
+        name:
+          maxLength: 255
+          minLength: 1
+          nullable: true
+          title: name
+          type: string
+        input:
+          maxLength: 50000
+          nullable: true
+          title: input
+          type: string
+        output:
+          maxLength: 50000
+          nullable: true
+          title: output
+          type: string
+        startedAt:
+          format: date-time
+          title: startedAt
+          type: string
+        finishedAt:
+          format: date-time
+          title: finishedAt
+          type: string
+        metadata:
+          additionalProperties:
+            type: string
+          title: metadata
+          type: object
+      required:
+      - finishedAt
+      - input
+      - kind
+      - output
+      - startedAt
+      title: TraceStep
+      type: object
+    EvaluationTrace:
+      additionalProperties: false
+      example:
+        steps:
+        - kind: MODEL
+          name: name
+          input: input
+          output: output
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          metadata:
+            key: metadata
+        - kind: MODEL
+          name: name
+          input: input
+          output: output
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          metadata:
+            key: metadata
+        - kind: MODEL
+          name: name
+          input: input
+          output: output
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          metadata:
+            key: metadata
+        - kind: MODEL
+          name: name
+          input: input
+          output: output
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          metadata:
+            key: metadata
+        - kind: MODEL
+          name: name
+          input: input
+          output: output
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          metadata:
+            key: metadata
+      properties:
+        steps:
+          items:
+            $ref: "#/components/schemas/TraceStep"
+          maxItems: 1000
+          title: steps
+          type: array
+      required:
+      - steps
+      title: EvaluationTrace
+      type: object
+    TrajectoryCheck:
+      additionalProperties: false
+      example:
+        traceAvailable: true
+        passed: true
+        missingExpectedSteps:
+        - kind: null
+          name: name
+        - kind: null
+          name: name
+        encounteredForbiddenSteps:
+        - kind: null
+          name: name
+        - kind: null
+          name: name
+      properties:
+        traceAvailable:
+          description: Whether the target returned trace evidence for deterministic
+            validation.
+          title: traceAvailable
+          type: boolean
+        passed:
+          description: Whether all trajectory constraints passed.
+          title: passed
+          type: boolean
+        missingExpectedSteps:
+          items:
+            $ref: "#/components/schemas/TrajectoryStepExpectation"
+          title: missingExpectedSteps
+          type: array
+        encounteredForbiddenSteps:
+          items:
+            $ref: "#/components/schemas/TrajectoryStepExpectation"
+          title: encounteredForbiddenSteps
+          type: array
+      required:
+      - encounteredForbiddenSteps
+      - missingExpectedSteps
+      - passed
+      - traceAvailable
+      title: TrajectoryCheck
+      type: object
+    EvaluationResult:
+      additionalProperties: false
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        attempt: 1
+        output: output
+        score: 0.6027456183070403
+        passed: true
+        reasoning: reasoning
+        trace:
+          steps:
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+        trajectory:
+          traceAvailable: true
+          passed: true
+          missingExpectedSteps:
+          - kind: null
+            name: name
+          - kind: null
+            name: name
+          encounteredForbiddenSteps:
+          - kind: null
+            name: name
+          - kind: null
+            name: name
+        createdAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        caseId:
+          format: uuid
+          title: id
+          type: string
+        attempt:
+          minimum: 1
+          title: attempt
+          type: integer
+        output:
+          maxLength: 50000
+          nullable: true
+          title: output
+          type: string
+        score:
+          description: A normalized evaluation result score.
+          maximum: 1
+          minimum: 0
+          title: EvaluationResultScore
+          type: number
+        passed:
+          description: Whether an evaluation result attempt passed its configured
+            threshold.
+          title: EvaluationResultPassedFilter
+          type: boolean
+        reasoning:
+          maxLength: 50000
+          title: reasoning
+          type: string
+        trace:
+          $ref: "#/components/schemas/EvaluationTrace"
+        trajectory:
+          $ref: "#/components/schemas/TrajectoryCheck"
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+      required:
+      - attempt
+      - caseId
+      - createdAt
+      - id
+      - passed
+      - reasoning
+      - score
+      title: EvaluationResult
+      type: object
+    EvaluationRun:
+      additionalProperties: false
+      example:
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        status: COMPLETED
+        snapshot:
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          name: name
+          description: description
+          target:
+            kind: LITELLM
+            profile: profile
+            model: model
+          evaluator:
+            profile: profile
+            model: model
+            metric: G_EVAL
+            criteria: criteria
+            threshold: 0.08008281904610115
+          repetitions: 60
+          concurrency: 3
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          updatedAt: 2000-01-23T04:56:07.000+00:00
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        startedAt: 2000-01-23T04:56:07.000+00:00
+        finishedAt: 2000-01-23T04:56:07.000+00:00
+        error: error
+        results:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        evaluationId:
+          format: uuid
+          title: id
+          type: string
+        status:
+          $ref: "#/components/schemas/EvaluationRunStatus"
+        snapshot:
+          $ref: "#/components/schemas/Evaluation"
+        createdAt:
+          format: date-time
+          title: createdAt
+          type: string
+        startedAt:
+          format: date-time
+          title: startedAt
+          type: string
+        finishedAt:
+          format: date-time
+          title: finishedAt
+          type: string
+        error:
+          maxLength: 5000
+          title: error
+          type: string
+        results:
+          description: Persisted result attempts available when the run is retrieved.
+          items:
+            $ref: "#/components/schemas/EvaluationResult"
+          title: results
+          type: array
+      required:
+      - createdAt
+      - evaluationId
+      - id
+      - snapshot
+      - status
+      title: EvaluationRun
+      type: object
+    EvaluationRunListResponse:
+      additionalProperties: false
+      example:
+        data:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: COMPLETED
+          snapshot:
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            description: description
+            target:
+              kind: LITELLM
+              profile: profile
+              model: model
+            evaluator:
+              profile: profile
+              model: model
+              metric: G_EVAL
+              criteria: criteria
+              threshold: 0.08008281904610115
+            repetitions: 60
+            concurrency: 3
+            createdAt: 2000-01-23T04:56:07.000+00:00
+            updatedAt: 2000-01-23T04:56:07.000+00:00
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          error: error
+          results:
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: COMPLETED
+          snapshot:
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            description: description
+            target:
+              kind: LITELLM
+              profile: profile
+              model: model
+            evaluator:
+              profile: profile
+              model: model
+              metric: G_EVAL
+              criteria: criteria
+              threshold: 0.08008281904610115
+            repetitions: 60
+            concurrency: 3
+            createdAt: 2000-01-23T04:56:07.000+00:00
+            updatedAt: 2000-01-23T04:56:07.000+00:00
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          error: error
+          results:
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: COMPLETED
+          snapshot:
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            description: description
+            target:
+              kind: LITELLM
+              profile: profile
+              model: model
+            evaluator:
+              profile: profile
+              model: model
+              metric: G_EVAL
+              criteria: criteria
+              threshold: 0.08008281904610115
+            repetitions: 60
+            concurrency: 3
+            createdAt: 2000-01-23T04:56:07.000+00:00
+            updatedAt: 2000-01-23T04:56:07.000+00:00
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          error: error
+          results:
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: COMPLETED
+          snapshot:
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            description: description
+            target:
+              kind: LITELLM
+              profile: profile
+              model: model
+            evaluator:
+              profile: profile
+              model: model
+              metric: G_EVAL
+              criteria: criteria
+              threshold: 0.08008281904610115
+            repetitions: 60
+            concurrency: 3
+            createdAt: 2000-01-23T04:56:07.000+00:00
+            updatedAt: 2000-01-23T04:56:07.000+00:00
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          error: error
+          results:
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          evaluationId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: COMPLETED
+          snapshot:
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            name: name
+            description: description
+            target:
+              kind: LITELLM
+              profile: profile
+              model: model
+            evaluator:
+              profile: profile
+              model: model
+              metric: G_EVAL
+              criteria: criteria
+              threshold: 0.08008281904610115
+            repetitions: 60
+            concurrency: 3
+            createdAt: 2000-01-23T04:56:07.000+00:00
+            updatedAt: 2000-01-23T04:56:07.000+00:00
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          startedAt: 2000-01-23T04:56:07.000+00:00
+          finishedAt: 2000-01-23T04:56:07.000+00:00
+          error: error
+          results:
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+          - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            attempt: 1
+            output: output
+            score: 0.6027456183070403
+            passed: true
+            reasoning: reasoning
+            trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            trajectory:
+              traceAvailable: true
+              passed: true
+              missingExpectedSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+              encounteredForbiddenSteps:
+              - kind: null
+                name: name
+              - kind: null
+                name: name
+            createdAt: 2000-01-23T04:56:07.000+00:00
+        pagination:
+          offset: 0
+          limit: 56
+          total: 0
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/EvaluationRun"
+          maxItems: 100
+          title: data
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+      title: EvaluationRunListResponse
+      type: object
+    EvaluationResultSortBy:
+      default: CREATED_AT
+      description: Field used to order evaluation results.
+      enum:
+      - CREATED_AT
+      - SCORE
+      - ATTEMPT
+      example: CREATED_AT
+      title: EvaluationResultSortBy
+      type: string
+    EvaluationResultListResponse:
+      additionalProperties: false
+      example:
+        data:
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        pagination:
+          offset: 0
+          limit: 56
+          total: 0
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/EvaluationResult"
+          maxItems: 100
+          title: data
+          type: array
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+      - data
+      - pagination
+      title: EvaluationResultListResponse
+      type: object
+    TrajectoryExpectation_anyOf:
+      properties:
+        expectedSteps:
+          minItems: 1
+          title: expectedSteps
+      required:
+      - expectedSteps
+      title: TrajectoryExpectation_anyOf
+    TrajectoryExpectation_anyOf_1:
+      properties:
+        forbiddenSteps:
+          minItems: 1
+          title: forbiddenSteps
+      required:
+      - forbiddenSteps
+      title: TrajectoryExpectation_anyOf_1
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      description: Authentication using an OpenID Connect access token.
+      scheme: bearer
+      type: http
