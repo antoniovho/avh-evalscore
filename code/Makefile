@@ -28,10 +28,10 @@ verify: lint test
 super-verify: format lint-fix lint test-coverage
 
 integration:
-	uv run pytest tests/integration/ -v --tb=short
+	EVALSCORE_RUN_DB_INTEGRATION=1 uv run pytest tests/integration/ -m integration -v --tb=short
 
 mutation:
-	uv run mutmut run
+	uv run mutmut run --max-children 2
 
 sonar:
 	@if [ -f .env ]; then set -a; . ./.env; set +a; fi; \
