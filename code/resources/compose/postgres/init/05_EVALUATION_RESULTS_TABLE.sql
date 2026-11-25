@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS avh_evalscore_v1.evaluation_results (
     passed           boolean         NOT NULL,
     reasoning        text            NOT NULL,
     trace            jsonb           NULL,
+    judge_trace      jsonb           NULL,
     trajectory_check jsonb           NULL,
     created_at       timestamptz(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at       timestamptz(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP,

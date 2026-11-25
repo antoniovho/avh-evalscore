@@ -22,7 +22,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.3,<10.0",
+  "mutmut>=3.3,<4.0",
+  "pytest>=8.3,<9.0",
   "pytest-asyncio>=0.25,<2.0",
   "pytest-cov>=7.0,<8.0",
   "pytest-mock>=3.14,<4.0",
@@ -84,6 +85,7 @@ indent-style = "space"
 [tool.mutmut]
 source_paths = ["evalscore/"]
 on_dependency_change = "rerun"
+pytest_add_cli_args_test_selection = ["tests/unit/"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
