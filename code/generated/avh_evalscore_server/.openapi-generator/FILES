@@ -1,6 +1,5 @@
 .flake8
 .gitignore
-.openapi-generator-ignore
 Dockerfile
 README.md
 avh_evalscore_server/apis/__init__.py
@@ -11,6 +10,7 @@ avh_evalscore_server/apis/evaluations_api_base.py
 avh_evalscore_server/impl/__init__.py
 avh_evalscore_server/main.py
 avh_evalscore_server/models/__init__.py
+avh_evalscore_server/models/aillm_runtime_target.py
 avh_evalscore_server/models/create_evaluation_case_request.py
 avh_evalscore_server/models/create_evaluation_request.py
 avh_evalscore_server/models/create_multi_turn_evaluation_case_request.py
@@ -57,5 +57,3 @@ pyproject.toml
 requirements.txt
 setup.cfg
 tests/conftest.py
-tests/test_evaluation_runs_api.py
-tests/test_evaluations_api.py

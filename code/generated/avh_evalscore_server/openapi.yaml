@@ -5,7 +5,7 @@ info:
     name: Antonio Velasco Horcajada
   description: API for authoring and executing reproducible LLM evaluations.
   title: AVH Evalscore
-  version: 0.1.1
+  version: 0.1.2
 servers:
 - description: Local development server
   url: http://localhost:8080
@@ -1654,6 +1654,7 @@ components:
       enum:
       - LITELLM
       - HTTP
+      - AILLM_RUNTIME
       title: TargetKind
       type: string
     UUID:
@@ -1706,15 +1707,43 @@ components:
       - profile
       title: HttpTarget
       type: object
+    AillmRuntimeTarget:
+      additionalProperties: false
+      properties:
+        kind:
+          enum:
+          - AILLM_RUNTIME
+          title: kind
+          type: string
+        profile:
+          description: Named runtime profile containing the gateway URL and virtual
+            key.
+          maxLength: 100
+          minLength: 1
+          title: profile
+          type: string
+        model:
+          maxLength: 255
+          minLength: 1
+          title: model
+          type: string
+      required:
+      - kind
+      - model
+      - profile
+      title: AillmRuntimeTarget
+      type: object
     TargetConfiguration:
       discriminator:
         mapping:
           LITELLM: "#/components/schemas/LiteLLMTarget"
           HTTP: "#/components/schemas/HttpTarget"
+          AILLM_RUNTIME: "#/components/schemas/AillmRuntimeTarget"
         propertyName: kind
       oneOf:
       - $ref: "#/components/schemas/LiteLLMTarget"
       - $ref: "#/components/schemas/HttpTarget"
+      - $ref: "#/components/schemas/AillmRuntimeTarget"
       title: TargetConfiguration
     EvaluatorConfiguration:
       additionalProperties: false
@@ -1738,14 +1767,19 @@ components:
           title: model
           type: string
         metric:
-          description: The DeepEval metric implemented by this API version.
+          description: The DeepEval metric to apply. G_EVAL requires criteria; the
+            other metrics use their built-in rubric.
           enum:
           - G_EVAL
+          - ANSWER_RELEVANCY
+          - TOXICITY
           title: metric
           type: string
         criteria:
+          description: Required only for the G_EVAL metric.
           maxLength: 10000
           minLength: 1
+          nullable: true
           title: criteria
           type: string
         threshold:
@@ -1754,7 +1788,6 @@ components:
           title: threshold
           type: number
       required:
-      - criteria
       - metric
       - model
       - profile
@@ -2705,6 +2738,48 @@ components:
             finishedAt: 2000-01-23T04:56:07.000+00:00
             metadata:
               key: metadata
+        judgeTrace:
+          steps:
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
+          - kind: MODEL
+            name: name
+            input: input
+            output: output
+            startedAt: 2000-01-23T04:56:07.000+00:00
+            finishedAt: 2000-01-23T04:56:07.000+00:00
+            metadata:
+              key: metadata
         trajectory:
           traceAvailable: true
           passed: true
@@ -2753,6 +2828,8 @@ components:
           title: reasoning
           type: string
         trace:
+          $ref: "#/components/schemas/EvaluationTrace"
+        judgeTrace:
           $ref: "#/components/schemas/EvaluationTrace"
         trajectory:
           $ref: "#/components/schemas/TrajectoryCheck"
@@ -2848,6 +2925,48 @@ components:
               finishedAt: 2000-01-23T04:56:07.000+00:00
               metadata:
                 key: metadata
+          judgeTrace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
           trajectory:
             traceAvailable: true
             passed: true
@@ -2870,6 +2989,48 @@ components:
           passed: true
           reasoning: reasoning
           trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          judgeTrace:
             steps:
             - kind: MODEL
               name: name
@@ -3047,6 +3208,48 @@ components:
                 finishedAt: 2000-01-23T04:56:07.000+00:00
                 metadata:
                   key: metadata
+            judgeTrace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
             trajectory:
               traceAvailable: true
               passed: true
@@ -3069,6 +3272,48 @@ components:
             passed: true
             reasoning: reasoning
             trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            judgeTrace:
               steps:
               - kind: MODEL
                 name: name
@@ -3199,6 +3444,48 @@ components:
                 finishedAt: 2000-01-23T04:56:07.000+00:00
                 metadata:
                   key: metadata
+            judgeTrace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
             trajectory:
               traceAvailable: true
               passed: true
@@ -3221,6 +3508,48 @@ components:
             passed: true
             reasoning: reasoning
             trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            judgeTrace:
               steps:
               - kind: MODEL
                 name: name
@@ -3351,6 +3680,48 @@ components:
                 finishedAt: 2000-01-23T04:56:07.000+00:00
                 metadata:
                   key: metadata
+            judgeTrace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
             trajectory:
               traceAvailable: true
               passed: true
@@ -3373,6 +3744,48 @@ components:
             passed: true
             reasoning: reasoning
             trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            judgeTrace:
               steps:
               - kind: MODEL
                 name: name
@@ -3503,6 +3916,48 @@ components:
                 finishedAt: 2000-01-23T04:56:07.000+00:00
                 metadata:
                   key: metadata
+            judgeTrace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
             trajectory:
               traceAvailable: true
               passed: true
@@ -3525,6 +3980,48 @@ components:
             passed: true
             reasoning: reasoning
             trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            judgeTrace:
               steps:
               - kind: MODEL
                 name: name
@@ -3655,6 +4152,48 @@ components:
                 finishedAt: 2000-01-23T04:56:07.000+00:00
                 metadata:
                   key: metadata
+            judgeTrace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
             trajectory:
               traceAvailable: true
               passed: true
@@ -3677,6 +4216,48 @@ components:
             passed: true
             reasoning: reasoning
             trace:
+              steps:
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+              - kind: MODEL
+                name: name
+                input: input
+                output: output
+                startedAt: 2000-01-23T04:56:07.000+00:00
+                finishedAt: 2000-01-23T04:56:07.000+00:00
+                metadata:
+                  key: metadata
+            judgeTrace:
               steps:
               - kind: MODEL
                 name: name
@@ -3813,28 +4394,7 @@ components:
               finishedAt: 2000-01-23T04:56:07.000+00:00
               metadata:
                 key: metadata
-          trajectory:
-            traceAvailable: true
-            passed: true
-            missingExpectedSteps:
-            - kind: null
-              name: name
-            - kind: null
-              name: name
-            encounteredForbiddenSteps:
-            - kind: null
-              name: name
-            - kind: null
-              name: name
-          createdAt: 2000-01-23T04:56:07.000+00:00
-        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          attempt: 1
-          output: output
-          score: 0.6027456183070403
-          passed: true
-          reasoning: reasoning
-          trace:
+          judgeTrace:
             steps:
             - kind: MODEL
               name: name
@@ -3939,28 +4499,7 @@ components:
               finishedAt: 2000-01-23T04:56:07.000+00:00
               metadata:
                 key: metadata
-          trajectory:
-            traceAvailable: true
-            passed: true
-            missingExpectedSteps:
-            - kind: null
-              name: name
-            - kind: null
-              name: name
-            encounteredForbiddenSteps:
-            - kind: null
-              name: name
-            - kind: null
-              name: name
-          createdAt: 2000-01-23T04:56:07.000+00:00
-        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          attempt: 1
-          output: output
-          score: 0.6027456183070403
-          passed: true
-          reasoning: reasoning
-          trace:
+          judgeTrace:
             steps:
             - kind: MODEL
               name: name
@@ -4024,6 +4563,258 @@ components:
           passed: true
           reasoning: reasoning
           trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          judgeTrace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          judgeTrace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          trajectory:
+            traceAvailable: true
+            passed: true
+            missingExpectedSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+            encounteredForbiddenSteps:
+            - kind: null
+              name: name
+            - kind: null
+              name: name
+          createdAt: 2000-01-23T04:56:07.000+00:00
+        - id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          caseId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          attempt: 1
+          output: output
+          score: 0.6027456183070403
+          passed: true
+          reasoning: reasoning
+          trace:
+            steps:
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+            - kind: MODEL
+              name: name
+              input: input
+              output: output
+              startedAt: 2000-01-23T04:56:07.000+00:00
+              finishedAt: 2000-01-23T04:56:07.000+00:00
+              metadata:
+                key: metadata
+          judgeTrace:
             steps:
             - kind: MODEL
               name: name
