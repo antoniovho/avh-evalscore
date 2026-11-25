@@ -48,8 +48,6 @@ avh_evalscore_server/models/trace_step_kind.py
 avh_evalscore_server/models/trajectory_check.py
 avh_evalscore_server/models/trajectory_evaluation_case.py
 avh_evalscore_server/models/trajectory_expectation.py
-avh_evalscore_server/models/trajectory_expectation_any_of.py
-avh_evalscore_server/models/trajectory_expectation_any_of1.py
 avh_evalscore_server/models/trajectory_step_expectation.py
 avh_evalscore_server/models/update_evaluation_request.py
 avh_evalscore_server/security_api.py

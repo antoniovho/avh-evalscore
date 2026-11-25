@@ -5,7 +5,7 @@ info:
     name: Antonio Velasco Horcajada
   description: API for authoring and executing reproducible LLM evaluations.
   title: AVH Evalscore
-  version: 0.1.0
+  version: 0.1.1
 servers:
 - description: Local development server
   url: http://localhost:8080
@@ -2255,20 +2255,20 @@ components:
       type: object
     TrajectoryExpectation:
       additionalProperties: false
-      anyOf:
-      - $ref: "#/components/schemas/TrajectoryExpectation_anyOf"
-      - $ref: "#/components/schemas/TrajectoryExpectation_anyOf_1"
+      minProperties: 1
       properties:
         expectedSteps:
           items:
             $ref: "#/components/schemas/TrajectoryStepExpectation"
           maxItems: 100
+          minItems: 1
           title: expectedSteps
           type: array
         forbiddenSteps:
           items:
             $ref: "#/components/schemas/TrajectoryStepExpectation"
           maxItems: 100
+          minItems: 1
           title: forbiddenSteps
           type: array
         strictOrder:
@@ -4097,22 +4097,6 @@ components:
       - pagination
       title: EvaluationResultListResponse
       type: object
-    TrajectoryExpectation_anyOf:
-      properties:
-        expectedSteps:
-          minItems: 1
-          title: expectedSteps
-      required:
-      - expectedSteps
-      title: TrajectoryExpectation_anyOf
-    TrajectoryExpectation_anyOf_1:
-      properties:
-        forbiddenSteps:
-          minItems: 1
-          title: forbiddenSteps
-      required:
-      - forbiddenSteps
-      title: TrajectoryExpectation_anyOf_1
   securitySchemes:
     bearerAuth:
       bearerFormat: JWT
