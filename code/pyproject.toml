@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.15,<2.0",
+  "avh-evalscore-server",
   "asyncpg>=0.30,<1.0",
   "deepeval>=4.0,<5.0",
   "fastapi>=0.115,<1.0",
@@ -34,11 +35,11 @@ generator-command = "npx --yes @openapitools/openapi-generator-cli@2.41.0"
 generator-version = "7.27.0"
 
 [tool.openapi-contracts.contracts.avh-evalscore]
-version = "0.1.0"
+version = "0.1.1"
 repository = "antoniovho/app-devtools"
 tag = "avh-evalscore-api-v{version}"
 artifact = "avh-evalscore-api-{version}.yml"
-sha256 = "bc4b468f3dedca26690e5f1c01f3745ec9b4bd2e368b2fe7098a8e94c1a440b1"
+sha256 = "ae2d3a186bc5466f4806991ca8169a6708eb2595336b4e73f82ec89971a26b5c"
 output = "contracts/open_api/avh-evalscore-api.yml"
 
 [tool.openapi-contracts.generators.rest.server.avh-evalscore-server]
@@ -61,6 +62,9 @@ testpaths = ["tests"]
 addopts = "-q"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.uv.sources]
+avh-evalscore-server = { path = "generated/avh_evalscore_server", editable = true }
 
 [tool.ruff]
 target-version = "py312"
